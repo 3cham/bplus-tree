@@ -1,16 +1,16 @@
-pub struct Node<Any> {
+pub(super) struct Node<Any> {
     key: u32,
     children: Vec<Node<Any>>,
     values: Vec<Kv<Any>>
 }
 
-pub struct Kv<Any> {
+struct Kv<Any> {
     key: u32,
     value: Any
 }
 
 impl<Any> Node<Any> {
-    pub fn new(key: u32, value: Any) -> Self {
+    pub(super) fn new(key: u32, value: Any) -> Self {
         let mut values = Vec::new();
         values.push(Kv {
             key: key,
@@ -32,7 +32,7 @@ impl<Any> Node<Any> {
 
     // }
 
-    pub fn get(&self, key: u32) -> Option<&Any> {
+    pub(super) fn get(&self, key: u32) -> Option<&Any> {
         if self.values.is_empty() {
             // find the first child whose key is greater than the search key
             // if not found, default to the first child
@@ -51,4 +51,13 @@ impl<Any> Node<Any> {
     // fn rebalance(&mut self) -> bool {
 
     // }
+}
+
+#[test]
+fn test_node_new() {
+    let n = Node::new(1, 2);
+    assert_eq!(n.key, 1);
+    assert_eq!(n.children.len(), 0);
+    assert_eq!(n.values.len(), 1);
+    assert_eq!(n.values.get(0).map(|elem| elem.value), Some(2));
 }
