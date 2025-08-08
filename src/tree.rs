@@ -11,12 +11,12 @@ pub struct Kv<Any> {
 
 impl<Any> Node<Any> {
     pub fn new(key: u32, value: Any) -> Self {
-        let kv = Kv {
+        let mut values = Vec::new();
+        values.push(Kv {
             key: key,
             value: value
-        };
-        let mut values = Vec::new();
-        values.push(kv);
+        });
+
         Node { key: key, childrens: Vec::new(), values: values }
     }
 
