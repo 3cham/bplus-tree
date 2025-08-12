@@ -1,3 +1,5 @@
+use std::u32::MIN;
+
 pub(super) struct Node<Any> {
     key: u32,
     children: Vec<Node<Any>>,
@@ -10,18 +12,12 @@ struct Kv<Any> {
 }
 
 impl<Any> Node<Any> {
-    pub(super) fn new(key: u32, value: Any) -> Self {
-        let mut values = Vec::new();
-        values.push(Kv {
-            key: key,
-            value: value
-        });
-
-        Node { key: key, children: Vec::new(), values: values }
+    pub(super) fn new() -> Self {
+        Node { key: MIN, children: Vec::new(), values: Vec::new() }
     }
 
     fn is_leaf_node(&self) -> bool {
-        !self.values.is_empty()
+        self.children.is_empty()
     }
 
     pub fn insert(&mut self, key: u32, value: Any, order: u32) -> bool {
@@ -64,29 +60,42 @@ impl<Any> Node<Any> {
     // fn rebalance(&mut self) -> bool {
 
     // }
+    //
+
+    fn has_overflown_leaf(&self, order: u32) -> bool {
+        if self.is_leaf_node() {
+            self.values.len() > order as usize
+        } else {
+            self.children.iter().any(|child| child.has_overflown_leaf(order))
+        }
+    }
 }
 
 #[test]
 fn test_node_new() {
-    let n = Node::new(1, 2);
-    assert_eq!(n.key, 1);
+    let mut n = Node::new();
+    n.insert(1, 2, 2);
+    assert_eq!(n.key, MIN);
     assert_eq!(n.children.len(), 0);
     assert_eq!(n.values.len(), 1);
     assert_eq!(n.values.get(0).map(|elem| elem.value), Some(2));
+    assert_eq!(n.values.get(0).map(|elem| elem.key), Some(1));
 }
 
 #[test]
-fn test_node_get() {
-    let n = Node::new(1, 2);
+fn test_node_find() {
+    let mut n = Node::new();
+    n.insert(1, 2, 2);
     assert_eq!(n.find(1), Some(&2))
 }
 
 #[test]
 fn test_node_insert() {
-    let mut n = Node::new(1, 2);
+    let mut n = Node::new();
     let order = 3;
-    for i in 2..10 {
+    for i in 1..10 {
         _ = n.insert(i, i, order);
-        assert_eq!(n.find(i), Some(&i))
+        assert_eq!(n.find(i), Some(&i));
+        assert_eq!(n.has_overflown_leaf(order), false)
     }
 }
