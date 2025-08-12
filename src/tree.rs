@@ -20,9 +20,22 @@ impl<Any> Node<Any> {
         Node { key: key, children: Vec::new(), values: values }
     }
 
-    // pub fn insert(&mut self, key: u32, value: Any) -> bool {
+    fn is_leaf_node(&self) -> bool {
+        !self.values.is_empty()
+    }
 
-    // }
+    pub fn insert(&mut self, key: u32, value: Any, order: u32) -> bool {
+        if self.is_leaf_node() {
+            self.values.push(Kv{key, value});
+            return true;
+        } else {
+            let idx = self.children.iter().position(|child| child.key > key);
+            match idx {
+                Some(i) if i > 0 => self.children[i - 1].insert(key, value, order),
+                _ => self.children[0].insert(key, value, order),
+            }
+        }
+    }
 
     // pub fn delete(key: u32) -> bool {
 
@@ -32,14 +45,14 @@ impl<Any> Node<Any> {
 
     // }
 
-    pub(super) fn get(&self, key: u32) -> Option<&Any> {
-        if self.values.is_empty() {
+    pub(super) fn find(&self, key: u32) -> Option<&Any> {
+        if !self.is_leaf_node() {
             // find the first child whose key is greater than the search key
             // if not found, default to the first child
             let idx = self.children.iter().position(|child| child.key > key);
             match idx {
-                Some(i) if i > 0 => self.children[i - 1].get(key),
-                _ => self.children.get(0).and_then(|child| child.get(key)),
+                Some(i) if i > 0 => self.children[i - 1].find(key),
+                _ => self.children.get(0).and_then(|child| child.find(key)),
             }
         } else {
             self.values.iter()
@@ -60,4 +73,20 @@ fn test_node_new() {
     assert_eq!(n.children.len(), 0);
     assert_eq!(n.values.len(), 1);
     assert_eq!(n.values.get(0).map(|elem| elem.value), Some(2));
+}
+
+#[test]
+fn test_node_get() {
+    let n = Node::new(1, 2);
+    assert_eq!(n.find(1), Some(&2))
+}
+
+#[test]
+fn test_node_insert() {
+    let mut n = Node::new(1, 2);
+    let order = 3;
+    for i in 2..10 {
+        _ = n.insert(i, i, order);
+        assert_eq!(n.find(i), Some(&i))
+    }
 }

@@ -13,6 +13,6 @@ impl<Any> BTree<Any> {
     }
 
     pub fn get(&self, key: u32) -> Option<&Any> {
-        self.root.get(key)
+        self.root.find(key)
     }
 }
