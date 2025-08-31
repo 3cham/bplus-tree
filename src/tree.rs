@@ -43,17 +43,14 @@ impl<Any: Clone> Node<Any> {
         }
 
         // perform insert
-        let new_child_node = if self.is_leaf_node() {
+        if self.is_leaf_node() {
             self.insert_key_value_at_leaf(key, value);
-            None
         } else {
             let child_index = self.find_child_index(key);
-            self.children[child_index].insert(key, value)
+            if let Some(new_node) = self.children[child_index].insert(key, value) {
+                self.insert_child_node(new_node);
+            }
         };
-
-        if let Some(node) = new_child_node {
-            self.insert_child_node(node);
-        }
 
         // perform node splitting if needed:
         if self.keys.len() > TREE_ORDER as usize {
@@ -69,10 +66,7 @@ impl<Any: Clone> Node<Any> {
 
     pub fn update(&mut self, key: u32, value: Any) -> bool {
         if !self.is_leaf_node() {
-            let idx = match self.keys.iter().position(|ckey| *ckey > key) {
-                Some(i) if i > 0 => i - 1,
-                _ => self.keys.len() - 1,
-            };
+            let idx = self.find_child_index(key);
 
             if let Some(child) = self.children.get_mut(idx) {
                 child.update(key, value)
@@ -251,5 +245,16 @@ mod test {
             assert_eq!(n._has_non_sorted_leaf(), false);
             assert_eq!(n._has_overflown_leaf(), false)
         }
+    }
+
+    #[test]
+    fn test_invalid_update() {
+        let mut n = super::Node::new();
+        for i in 1..20 {
+            _ = n.insert(i, i);
+        }
+
+        let updated = n.update(21, 0);
+        assert_eq!(updated, false);
     }
 }
