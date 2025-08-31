@@ -54,8 +54,33 @@ impl<Any> Node<Any> {
 
     // }
 
-    // pub fn update(key: u32, value: Any) -> bool {
+    pub fn update(&mut self, key: u32, value: Any) -> bool {
+        if !self.is_leaf_node() {
+            let idx = match self.keys.iter().position(|ckey| *ckey > key) {
+                Some(i) => i - 1,
+                _ => 0
+            };
 
+            if let Some(child) = self.children.get_mut(idx) {
+                child.update(key, value)
+            } else {
+                false
+            }
+        } else {
+            match self.values.iter().position(|elem| elem.key == key) {
+                Some(idx) => if let Some(elem) = self.values.get_mut(idx) {
+                    elem.value = value;
+                    true
+                } else {
+                    false
+                },
+                _ => false
+            }
+        }
+    }
+
+    // pub fn find_range(min_key: u32, max_key: u32) -> Vec<Any> {
+    //
     // }
 
     pub(super) fn find(&self, key: u32) -> Option<&Any> {
@@ -110,6 +135,15 @@ mod test {
         let mut n = Node::new();
         n.insert(1, 2);
         assert_eq!(n.find(1), Some(&2))
+    }
+
+    #[test]
+    fn test_node_update() {
+        let mut n = Node::new();
+        n.insert(1, 2);
+        assert_eq!(n.find(1), Some(&2));
+        n.update(1, 5);
+        assert_eq!(n.find(1), Some(&5));
     }
 
     #[test]
