@@ -98,12 +98,8 @@ impl<Any: Clone> Node<Any> {
 
     pub(super) fn find(&self, key: u32) -> Option<&Any> {
         if !self.is_leaf_node() {
-            // find the first child whose key is greater than the search key
-            // if not found, default to the last child
-            match self.keys.iter().position(|ckey| *ckey > key) {
-                Some(i) if i > 0 => self.children[i - 1].find(key),
-                _ => self.children.get(self.children.len() - 1).and_then(|child| child.find(key)),
-            }
+            let child_index = self.find_child_index(key);
+            self.children[child_index].find(key)
         } else {
             self.values.iter()
                 .find(|kv| kv.key == key)
@@ -152,6 +148,8 @@ impl<Any: Clone> Node<Any> {
     }
 
     fn find_child_index(&self, key: u32) -> usize {
+        // find the first child whose key is greater than the search key
+        // if not found, default to the last child
         match self.keys.iter().position(|ckey| *ckey > key) {
             Some(i) if i > 0 => i - 1,
             _ => self.keys.len() - 1
@@ -216,11 +214,10 @@ impl<Any: Clone> Node<Any> {
 }
 
 mod test {
-    use super::Node;
 
     #[test]
     fn test_node_new() {
-        let mut n = Node::new();
+        let mut n = super::Node::new();
         n.insert(1, 2);
         assert_eq!(n.keys.first(), Some(&1));
         assert_eq!(n.children.len(), 1);
@@ -231,14 +228,14 @@ mod test {
 
     #[test]
     fn test_node_find() {
-        let mut n = Node::new();
+        let mut n = super::Node::new();
         n.insert(1, 2);
         assert_eq!(n.find(1), Some(&2))
     }
 
     #[test]
     fn test_node_update() {
-        let mut n = Node::new();
+        let mut n = super::Node::new();
         n.insert(1, 2);
         assert_eq!(n.find(1), Some(&2));
         n.update(1, 5);
@@ -247,7 +244,7 @@ mod test {
 
     #[test]
     fn test_node_insert() {
-        let mut n = Node::new();
+        let mut n = super::Node::new();
         for i in 1..20 {
             _ = n.insert(i, i);
             assert_eq!(n.find(i), Some(&i));
