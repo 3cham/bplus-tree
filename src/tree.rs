@@ -26,8 +26,7 @@ impl<Any> Node<Any> {
     pub(super) fn insert(&mut self, key: u32, value: Any) -> bool {
         if self.is_leaf_node() {
             // if self.values.len() < TREE_ORDER as usize {
-                let idx = self.keys.iter().position(|elem| *elem > key);
-                match idx {
+                match self.keys.iter().position(|elem| *elem > key) {
                     Some(i) => {
                         self.values.insert(i, Kv{key, value});
                         self.keys.insert(i, key);
@@ -42,8 +41,7 @@ impl<Any> Node<Any> {
             // }
             return true;
         } else {
-            let idx = self.keys.iter().position(|ckey| *ckey > key);
-            match idx {
+            match self.keys.iter().position(|ckey| *ckey > key) {
                 Some(i) if i > 0 => self.children[i - 1].insert(key, value),
                 _ => self.children[0].insert(key, value),
             }
@@ -87,8 +85,7 @@ impl<Any> Node<Any> {
         if !self.is_leaf_node() {
             // find the first child whose key is greater than the search key
             // if not found, default to the first child
-            let idx = self.keys.iter().position(|ckey| *ckey > key);
-            match idx {
+            match self.keys.iter().position(|ckey| *ckey > key) {
                 Some(i) if i > 0 => self.children[i - 1].find(key),
                 _ => self.children.get(0).and_then(|child| child.find(key)),
             }
