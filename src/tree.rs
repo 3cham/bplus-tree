@@ -1,5 +1,9 @@
 use std::fmt::Display;
 
+// denotes the maximum number of children that any node in the tree **can** have
+const TREE_ORDER: u32 = 8;
+
+
 #[derive(Clone)]
 pub(super) struct Node<Any: Clone> {
     is_root: bool,
@@ -20,117 +24,42 @@ impl <Any: Clone>Display for Kv<Any> {
     }
 }
 
-// denotes the maximum number of children that any node in the tree **can** have
-const TREE_ORDER: u32 = 4;
-// also, TREE_ORDER / 2 is the minimum number of children that any node in the tree **should** have
-const MIN_CHILDREN_COUNT: u32 = TREE_ORDER / 2;
-
 impl<Any: Clone> Node<Any> {
     pub(super) fn new() -> Self {
         Node { keys: Vec::new(), children: Vec::new(), values: Vec::new(), is_root: true }
     }
 
-    fn copy(&self) -> Self {
-        Node {
-            keys: self.keys.to_vec(),
-            children: self.children.to_vec(),
-            values: self.values.to_vec(),
-            is_root: false,
-        }
-    }
-
-    fn is_leaf_node(&self) -> bool {
-        self.children.is_empty()
-    }
-
     pub(super) fn insert(&mut self, key: u32, value: Any) -> Option<Node<Any>> {
-        if self.is_leaf_node() {
-            if self.is_root {
-                let new_node = Node{
-                    keys: [key].to_vec(),
-                    children: Vec::new(),
-                    values: [Kv{key: key, value: value}].to_vec(),
-                    is_root: false,
-                };
-                self.keys.push(key);
-                self.children.push(new_node);
-                return None;
-            }
-            match self.keys.iter().position(|elem| *elem > key) {
-                Some(i) => {
-                    self.values.insert(i, Kv{key, value});
-                    self.keys.insert(i, key);
-                },
-                _ => {
-                    self.values.push(Kv{key, value});
-                    self.keys.push(key);
-                },
-            }
-            if self.keys.len() > TREE_ORDER as usize {
-                // perform node splitting:
-                // split into halves to form two new leaf nodes
-                // self remains the first half, new node takes the second half
-                // push back the first key of the new node to the parents
-
-                let mid = self.keys.len() / 2;
-                let right_keys = &self.keys[mid..].to_vec();
-                let right_values = &self.values[mid..].to_vec();
-                self.keys.truncate(mid);
-                self.values.truncate(mid);
-                return Some(Node {
-                    keys: right_keys.to_vec(),
-                    values: right_values.to_vec(),
-                    children: Vec::new(),
-                    is_root: false,
-                })
-            }
+        if self.is_leaf_node() && self.is_root {
+            // if our tree is still empty
+            self.keys.push(key);
+            self.children.push(Node{
+                keys: [key].to_vec(),
+                children: Vec::new(),
+                values: [Kv{key: key, value: value}].to_vec(),
+                is_root: false,
+            });
             return None;
+        }
+
+        // perform insert
+        let new_child_node = if self.is_leaf_node() {
+            self.insert_key_value_at_leaf(key, value);
+            None
         } else {
-            let last_elem = self.children.len() - 1;
-            let new_node = match self.keys.iter().position(|ckey| *ckey > key) {
-                Some(i) if i > 0 => self.children[i - 1].insert(key, value),
-                _ => self.children[last_elem].insert(key, value),
-            };
+            let child_index = self.find_child_index(key);
+            self.children[child_index].insert(key, value)
+        };
 
-            match new_node {
-                Some(node) => {
-                    let new_key = node.keys[0];
-                    match self.keys.iter().position(|elem| *elem > new_key) {
-                        Some(i) => {
-                            self.keys.insert(i, new_key);
-                            self.children.insert(i, node);
-                        },
-                        _ => {
-                            self.keys.push(new_key);
-                            self.children.push(node);
-                        },
-                    }
+        if let Some(node) = new_child_node {
+            self.insert_child_node(node);
+        }
 
-                    if self.keys.len() > TREE_ORDER as usize {
-                        let mid = self.keys.len() / 2;
-                        let new_right_node = Node {
-                            keys: self.keys[mid..].to_vec(),
-                            values: Vec::new(),
-                            children: self.children[mid..].to_vec(),
-                            is_root: false,
-                        };
-                        self.keys.truncate(mid);
-                        self.children.truncate(mid);
-
-                        if self.is_root {
-                            let new_left_node = self.copy();
-                            self.keys = [new_left_node.keys[0], new_right_node.keys[0]].to_vec();
-                            self.children = [new_left_node, new_right_node].to_vec();
-                            return None;
-                        } else {
-                            return Some(new_right_node)
-                        }
-                    } else {
-                        return None
-                    }
-                },
-                _ => None
-            }
+        // perform node splitting if needed:
+        if self.keys.len() > TREE_ORDER as usize {
+            self.split_node()
+        } else {
+            None
         }
     }
 
@@ -182,28 +111,103 @@ impl<Any: Clone> Node<Any> {
         }
     }
 
-    fn has_overflown_leaf(&self) -> bool {
+    fn copy(&self) -> Self {
+        Node {
+            keys: self.keys.to_vec(),
+            children: self.children.to_vec(),
+            values: self.values.to_vec(),
+            is_root: false,
+        }
+    }
+
+    fn is_leaf_node(&self) -> bool {
+        self.children.is_empty()
+    }
+
+    fn insert_key_value_at_leaf(&mut self, key: u32, value: Any) {
+        match self.keys.iter().position(|elem| *elem > key) {
+            Some(i) => {
+                self.values.insert(i, Kv { key, value });
+                self.keys.insert(i, key);
+            }
+            None => {
+                self.values.push(Kv { key, value });
+                self.keys.push(key);
+            }
+        }
+    }
+
+    fn insert_child_node(&mut self, node: Node<Any>) {
+        let new_key = node.keys[0];
+        match self.keys.iter().position(|elem| *elem > new_key) {
+            Some(i) => {
+                self.keys.insert(i, new_key);
+                self.children.insert(i, node);
+            }
+            None => {
+                self.keys.push(new_key);
+                self.children.push(node);
+            }
+        }
+    }
+
+    fn find_child_index(&self, key: u32) -> usize {
+        match self.keys.iter().position(|ckey| *ckey > key) {
+            Some(i) if i > 0 => i - 1,
+            _ => self.keys.len() - 1
+        }
+    }
+
+    fn split_node(&mut self) -> Option<Node<Any>>{
+        let mid = self.keys.len() / 2;
+
+        let new_right_node = Node {
+            keys: self.keys[mid..].to_vec(),
+            values: if self.is_leaf_node() { self.values[mid..].to_vec() } else { Vec::new() },
+            children: if self.is_leaf_node() { Vec::new() } else { self.children[mid..].to_vec() },
+            is_root: false,
+        };
+
+        self.keys.truncate(mid);
+
+        if self.is_leaf_node() {
+            self.values.truncate(mid);
+        } else {
+            self.children.truncate(mid);
+        }
+
+        if self.is_root {
+            let new_left_node = self.copy();
+            self.keys = [new_left_node.keys[0], new_right_node.keys[0]].to_vec();
+            self.children = [new_left_node, new_right_node].to_vec();
+            return None;
+        } else {
+            return Some(new_right_node)
+        }
+    }
+
+    fn _has_overflown_leaf(&self) -> bool {
         if self.is_leaf_node() {
             self.values.len() > TREE_ORDER as usize
         } else {
-            self.children.iter().any(|child| child.has_overflown_leaf())
+            self.children.iter().any(|child| child._has_overflown_leaf())
         }
     }
 
-    fn has_non_sorted_leaf(&self) -> bool {
+    fn _has_non_sorted_leaf(&self) -> bool {
         if self.is_leaf_node() {
             !self.values.is_sorted_by(|a, b| a.key <= b.key)
         } else {
-            self.children.iter().any(|child| child.has_non_sorted_leaf())
+            self.children.iter().any(|child| child._has_non_sorted_leaf())
         }
     }
 
-    fn display(&self) {
+    fn _display(&self) {
         if self.is_leaf_node() {
             self.values.iter().for_each(|kv| print!("{kv} "));
             print!("|")
         } else {
-            self.children.iter().for_each(|node| node.display());
+            self.children.iter().for_each(|node| node._display());
             println!();
             self.keys.iter().for_each(|key| print!("{key} "));
             print!("|")
@@ -247,8 +251,8 @@ mod test {
         for i in 1..20 {
             _ = n.insert(i, i);
             assert_eq!(n.find(i), Some(&i));
-            assert_eq!(n.has_non_sorted_leaf(), false);
-            assert_eq!(n.has_overflown_leaf(), false)
+            assert_eq!(n._has_non_sorted_leaf(), false);
+            assert_eq!(n._has_overflown_leaf(), false)
         }
     }
 }

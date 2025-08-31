@@ -16,6 +16,10 @@ impl<Any: Clone> BTree<Any> {
         return true;
     }
 
+    pub fn update(&mut self, key: u32, value: Any) -> bool {
+        self.root.update(key, value)
+    }
+
     pub fn get(&self, key: u32) -> Option<&Any> {
         self.root.find(key)
     }
