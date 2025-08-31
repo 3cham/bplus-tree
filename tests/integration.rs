@@ -2,7 +2,7 @@ use bplus_tree::BTree;
 
 #[test]
 fn test_new() {
-    let mut t = BTree::new(3);
+    let mut t = BTree::new();
     t.insert(10, "Test");
 
     assert_eq!(t.get(10), Some(&"Test"));
@@ -10,7 +10,7 @@ fn test_new() {
 
 #[test]
 fn test_notfound() {
-    let mut t = BTree::new(2);
+    let mut t = BTree::new();
     t.insert(10, "Test");
 
     assert_eq!(t.get(1), None)
