@@ -16,7 +16,6 @@ fn test_notfound() {
     assert_eq!(t.get(1), None)
 }
 
-
 #[test]
 fn test_modification() {
     let mut t = BTree::new();
@@ -29,4 +28,5 @@ fn test_modification() {
     t.update(1, "11");
     assert_eq!(t.get(1), Some(&"11"));
 
+    assert_eq!(t.update(2, "11"), false);
 }

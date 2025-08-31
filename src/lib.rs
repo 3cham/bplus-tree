@@ -3,7 +3,7 @@ mod tree;
 use crate::tree::Node;
 
 pub struct BTree<Any: Clone> {
-    root: Node<Any>
+    root: Node<Any>,
 }
 
 impl<Any: Clone> BTree<Any> {

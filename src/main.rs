@@ -4,7 +4,7 @@ fn main() {
     match x {
         Some(i) if *i > 1 => {
             print!("do something")
-        },
+        }
         _ => {
             print!("stil ok")
         }

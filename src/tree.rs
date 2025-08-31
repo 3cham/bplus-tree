@@ -3,22 +3,21 @@ use std::fmt::Display;
 // denotes the maximum number of children that any node in the tree **can** have
 const TREE_ORDER: u32 = 8;
 
-
 #[derive(Clone)]
 pub(super) struct Node<Any: Clone> {
     is_root: bool,
     keys: Vec<u32>,
     children: Vec<Node<Any>>,
-    values: Vec<Kv<Any>>
+    values: Vec<Kv<Any>>,
 }
 
 #[derive(Clone)]
 struct Kv<Any: Clone> {
     key: u32,
-    value: Any
+    value: Any,
 }
 
-impl <Any: Clone>Display for Kv<Any> {
+impl<Any: Clone> Display for Kv<Any> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.key)
     }
@@ -26,14 +25,19 @@ impl <Any: Clone>Display for Kv<Any> {
 
 impl<Any: Clone> Node<Any> {
     pub(super) fn new() -> Self {
-        Node { keys: Vec::new(), children: Vec::new(), values: Vec::new(), is_root: true }
+        Node {
+            keys: Vec::new(),
+            children: Vec::new(),
+            values: Vec::new(),
+            is_root: true,
+        }
     }
 
     pub(super) fn insert(&mut self, key: u32, value: Any) -> Option<Node<Any>> {
         if self.is_leaf_node() && self.is_root {
             // if our tree is still empty
             self.keys.push(key);
-            self.children.push(Node{
+            self.children.push(Node {
                 keys: [key].to_vec(),
                 children: Vec::new(),
                 values: [Kv{key: key, value: value}].to_vec(),
@@ -75,13 +79,15 @@ impl<Any: Clone> Node<Any> {
             }
         } else {
             match self.values.iter().position(|elem| elem.key == key) {
-                Some(idx) => if let Some(elem) = self.values.get_mut(idx) {
-                    elem.value = value;
-                    true
-                } else {
-                    false
-                },
-                _ => false
+                Some(idx) => {
+                    if let Some(elem) = self.values.get_mut(idx) {
+                        elem.value = value;
+                        true
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
             }
         }
     }
@@ -95,7 +101,8 @@ impl<Any: Clone> Node<Any> {
             let child_index = self.find_child_index(key);
             self.children[child_index].find(key)
         } else {
-            self.values.iter()
+            self.values
+                .iter()
                 .find(|kv| kv.key == key)
                 .map(|kv| &kv.value)
         }
@@ -146,11 +153,11 @@ impl<Any: Clone> Node<Any> {
         // if not found, default to the last child
         match self.keys.iter().position(|ckey| *ckey > key) {
             Some(i) if i > 0 => i - 1,
-            _ => self.keys.len() - 1
+            _ => self.keys.len() - 1,
         }
     }
 
-    fn split_node(&mut self) -> Option<Node<Any>>{
+    fn split_node(&mut self) -> Option<Node<Any>> {
         let mid = self.keys.len() / 2;
 
         let new_right_node = Node {
@@ -174,7 +181,7 @@ impl<Any: Clone> Node<Any> {
             self.children = [new_left_node, new_right_node].to_vec();
             return None;
         } else {
-            return Some(new_right_node)
+            return Some(new_right_node);
         }
     }
 
