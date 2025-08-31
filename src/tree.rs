@@ -121,8 +121,6 @@ impl<Any: Clone> Node<Any> {
                             let new_left_node = self.copy();
                             self.keys = [new_left_node.keys[0], new_right_node.keys[0]].to_vec();
                             self.children = [new_left_node, new_right_node].to_vec();
-                            println!("Here splitting ROOT!");
-                            println!("{:?}", self.keys);
                             return None;
                         } else {
                             return Some(new_right_node)
@@ -221,10 +219,10 @@ mod test {
         let mut n = Node::new();
         n.insert(1, 2);
         assert_eq!(n.keys.first(), Some(&1));
-        assert_eq!(n.children.len(), 0);
-        assert_eq!(n.values.len(), 1);
-        assert_eq!(n.values.get(0).map(|elem| elem.value), Some(2));
-        assert_eq!(n.values.get(0).map(|elem| elem.key), Some(1));
+        assert_eq!(n.children.len(), 1);
+        assert_eq!(n.values.len(), 0);
+        assert_eq!(n.children[0].values.get(0).map(|elem| elem.value), Some(2));
+        assert_eq!(n.children[0].values.get(0).map(|elem| elem.key), Some(1));
     }
 
     #[test]
@@ -248,8 +246,6 @@ mod test {
         let mut n = Node::new();
         for i in 1..20 {
             _ = n.insert(i, i);
-            n.display();
-            println!("=================");
             assert_eq!(n.find(i), Some(&i));
             assert_eq!(n.has_non_sorted_leaf(), false);
             assert_eq!(n.has_overflown_leaf(), false)
