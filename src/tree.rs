@@ -214,7 +214,8 @@ impl<Any: Clone> Node<Any> {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod tests {
 
     #[test]
     fn test_node_new() {
