@@ -14,7 +14,14 @@ to go back into the inner nodes for scanning data spanning multiple leaves
 
 
 ## Benchmark vs std::collections::BTreeMap
-![comparison](./benches/result/Benchmark vs std collections/report/violin.svg)
+Violin plot:
 <img src="./benches/result/Benchmark vs std collections/report/violin.svg">
+
+Average time this implementation:
+<img src="./benches/result/Benchmark vs std collections/ours__insert/report/pdf.svg">
+
+Average time std::collections implementation:
+<img src="./benches/result/Benchmark vs std collections/std__insert/report/pdf.svg">
+
 
 For detailed report see ![Report](benches/result/report/index.html)
