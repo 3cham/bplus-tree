@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 // denotes the maximum number of children that any node in the tree **can** have
-const TREE_ORDER: u32 = 8;
+const TREE_ORDER: u32 = 64;
 
 #[derive(Clone)]
 pub(super) struct Node<Any: Clone> {

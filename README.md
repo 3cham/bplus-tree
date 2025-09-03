@@ -11,3 +11,10 @@ do the split recursively. So B+ Tree only expands from the root direction.
 search process
 - B+ Tree has sibling links between its leaf nodes so that we don't have
 to go back into the inner nodes for scanning data spanning multiple leaves
+
+
+## Benchmark vs std::collections::BTreeMap
+![comparison](./benches/result/Benchmark vs std collections/report/violin.svg)
+<img src="./benches/result/Benchmark vs std collections/report/violin.svg">
+
+For detailed report see ![Report](benches/result/report/index.html)
